@@ -11,6 +11,20 @@ async function main() {
   console.log('🚀 Building Zalo for Linux...');
 
   try {
+    const distDir = path.join(BASE_DIR, 'dist');
+    // Clear dist directory before building
+    if (fs.existsSync(distDir)) {
+      console.log('🧹 Cleaning up dist directory...');
+      fs.readdirSync(distDir).forEach(file => {
+        const filePath = path.join(distDir, file);
+        if (fs.statSync(filePath).isFile()) {
+          fs.unlinkSync(filePath);
+        }
+      });
+    } else {
+      fs.mkdirSync(distDir, { recursive: true });
+    }
+
     // Read version from package.json.bak
     const packageJsonBakPath = path.join(APP_DIR, 'package.json.bak');
     if (fs.existsSync(packageJsonBakPath)) {
@@ -40,7 +54,6 @@ async function main() {
 
     // Final summary
     console.log('\n🎉 ===== BUILD SUMMARY =====');
-    const distDir = path.join(BASE_DIR, 'dist');
 
     if (fs.existsSync(distDir)) {
       const allFiles = fs.readdirSync(distDir)

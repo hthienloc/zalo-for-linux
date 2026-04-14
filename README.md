@@ -12,7 +12,8 @@ Thanks **realdtn2** for the solution: [realdtn2/zalo-linux-unofficial-2024](http
 - **Can't make or receive calls:** The call module (`zcall`) only ships as a macOS native binary.
 - **Can't see message reactions:** You won't see reactions in the UI (no badges/counters), but reacting still works and others can see your reaction.
 - **No Photos/Videos, Files and Links on the Conversation Info panel** for some reason (you can still view images/videos, files or links normally, they just don't appear on the conversation info panel).
-- Crash when clicking **Screenshot without Zalo window button**
+- **✅ Fixed**: "Screenshot without Zalo window" is fixed via native capture bridge.
+- **✅ Fixed**: Zalo window Show/Hide and restoration from tray is fully operational.
 - **✅ Fixed: No title bar with minimize/maximize/close buttons** - Thanks to [@NanKillBro](https://github.com/NanKillBro) for the solution. For more details, see [issue #4](https://github.com/doandat943/zalo-for-linux/issues/4)
 - **✅ Fixed: No tray menu icon**
 - **✅ Fixed: Freeze on login screen** - Replaced macOS sqlite3 binaries with native Linux builds. See [issue #13](https://github.com/doandat943/zalo-for-linux/issues/13).

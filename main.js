@@ -1,8 +1,8 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain, session } = require('electron');
+const { execSync } = require('child_process');
 const path = require('path');
 const fs = require('fs');
 
-// ---------------------------------------------------------------------------
 // Paths
 // ---------------------------------------------------------------------------
 
@@ -103,6 +103,9 @@ app.on('before-quit', () => {
   }
   try { globalShortcut.unregisterAll(); } catch (_) { }
 });
+ 
+app.once('ready', () => {
+});
 
 app.on('browser-window-created', (_evt, win) => {
   try {
@@ -122,26 +125,60 @@ app.on('browser-window-created', (_evt, win) => {
       }
     };
 
-    // Diagnostic listeners for screenshot investigation
-    const { dialog } = require('electron');
-    ipcMain.on('screen-capture', (event, ...args) => {
-      console.log('[DEBUG] screen-capture:', args);
-      dialog.showMessageBox({
-        title: 'Zalo Screenshot Debug',
-        message: 'Channel: screen-capture\nArgs: ' + JSON.stringify(args)
+    // Robust multi-tool fullscreen screenshot bridge (Linux)
+    const triggerScreenshot = () => {
+      const { exec } = require('child_process');
+      const tools = [
+        { name: 'spectacle', cmd: 'spectacle -rbc' },
+        { name: 'flameshot', cmd: 'flameshot gui' },
+        { name: 'gnome-screenshot', cmd: 'gnome-screenshot -ac' },
+        { name: 'xfce4-screenshooter', cmd: 'xfce4-screenshooter -rc' }
+      ];
+ 
+      return new Promise((resolve) => {
+        let found = false;
+        for (const tool of tools) {
+          try {
+            // Synchronous check is fine for existence
+            execSync(`which ${tool.name}`, { stdio: 'ignore' });
+            found = true;
+            console.log(`[Zalo Bridge] Triggering ${tool.name} (Async)...`);
+            exec(tool.cmd, (err) => {
+              if (err) console.error(`[Zalo Bridge] ${tool.name} error:`, err.message);
+            });
+            // Speculative restore: Assume tool grabs screen in < 1500ms
+            setTimeout(() => resolve(true), 1500);
+            break;
+          } catch (e) { continue; }
+        }
+        if (!found) resolve(false);
       });
-    });
-    ipcMain.on('start-screen-capture', (event, ...args) => {
-      console.log('[DEBUG] start-screen-capture:', args);
-      dialog.showMessageBox({
-        title: 'Zalo Screenshot Debug',
-        message: 'Channel: start-screen-capture\nArgs: ' + JSON.stringify(args)
-      });
-    });
-    ipcMain.on('screen-capture-shortcut', (event, ...args) => {
-      console.log('[DEBUG] screen-capture-shortcut:', args);
-    });
-
+    };
+ 
+    // Linux Screenshot Bridge
+    const originalHandle = ipcMain.handle;
+    ipcMain.handle = function (channel, handler) {
+      if (channel === 'screen-capture') {
+        const wrappedHandler = async (event, ...args) => {
+          const opts = args[0];
+          if (opts && opts.captureMode === false) {
+            if (mainWindow) mainWindow.hide();
+            await triggerScreenshot();
+            if (mainWindow) {
+              mainWindow.show();
+              if (mainWindow.isMinimized()) mainWindow.restore();
+              mainWindow.focus();
+              mainWindow.webContents.send('show-from-tray');
+            }
+            return true;
+          }
+          return handler(event, ...args);
+        };
+        return originalHandle.apply(ipcMain, [channel, wrappedHandler]);
+      }
+      return originalHandle.apply(ipcMain, [channel, handler]);
+    };
+ 
     win.on('page-title-updated', (e, title) => checkTitle(title));
     
     // Initial check for already set title
