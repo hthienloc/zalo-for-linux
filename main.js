@@ -11,6 +11,7 @@ const appDir = fs.existsSync(path.join(__dirname, 'app'))
   : path.join(path.dirname(process.execPath), 'app');
 
 const iconPath = path.join(appDir, 'pc-dist', 'favicon-512x512.png');
+const trayIconPath = iconPath;
 
 // ---------------------------------------------------------------------------
 // State
@@ -19,12 +20,6 @@ const iconPath = path.join(appDir, 'pc-dist', 'favicon-512x512.png');
 let tray = null;
 let mainWindow = null;
 let isAppQuitting = false;
-
-// ---------------------------------------------------------------------------
-// Plugins
-// ---------------------------------------------------------------------------
-
-const zalux = require('./plugins/zalux');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -43,6 +38,57 @@ function toggleDevTools() {
   } catch (e) {
     console.error('Toggle DevTools failed', e);
   }
+}
+
+function showMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.show();
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+    // Synchronize Zalo's internal UI state
+    try {
+      mainWindow.webContents.send('show-from-tray');
+    } catch (e) {
+      console.error('Failed to send show-from-tray:', e);
+    }
+  }
+}
+
+function hideMainWindow() {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.hide();
+  }
+}
+
+function updateTrayMenu() {
+  if (!tray) return;
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'Show',
+      click: showMainWindow
+    },
+    {
+      label: 'Hide',
+      click: hideMainWindow
+    },
+    {
+      label: 'Toggle DevTools',
+      click: toggleDevTools
+    },
+    {
+      label: 'Quit',
+      click: () => {
+        isAppQuitting = true;
+        if (tray) {
+          tray.destroy();
+          tray = null;
+        }
+        app.quit();
+      }
+    }
+  ]);
+  tray.setContextMenu(contextMenu);
 }
 
 // ---------------------------------------------------------------------------
@@ -68,54 +114,38 @@ app.on('browser-window-created', (_evt, win) => {
     if (win.removeMenu) win.removeMenu();
     win.autoHideMenuBar = true;
 
-    // Track the main Zalo window for tray menu
-    if (!mainWindow && win.getTitle() !== 'Shared Worker') {
-      mainWindow = win;
-
-      if (tray) {
-        const contextMenu = Menu.buildFromTemplate([
-          {
-            label: 'Show',
-            click: () => {
-              if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.show();
-                mainWindow.focus();
-              }
-            }
-          },
-          {
-            label: 'Hide',
-            click: () => {
-              if (mainWindow && !mainWindow.isDestroyed()) {
-                mainWindow.hide();
-              }
-            }
-          },
-          {
-            label: 'Toggle DevTools',
-            click: toggleDevTools
-          },
-          {
-            label: 'Quit',
-            click: () => {
-              isAppQuitting = true;
-              if (tray) {
-                tray.destroy();
-                tray = null;
-              }
-              app.quit();
-            }
-          }
-        ]);
-        tray.setContextMenu(contextMenu);
+    // Detect Zalo main window by title
+    const checkTitle = (title) => {
+      if (title.includes('Zalo')) {
+        mainWindow = win;
+        updateTrayMenu();
       }
-    }
+    };
 
-    // Minimize to tray instead of closing
+    win.on('page-title-updated', (e, title) => checkTitle(title));
+    
+    // Initial check for already set title
+    checkTitle(win.getTitle());
+
+    // Minimize to tray instead of closing for the main window
     win.on('close', (event) => {
-      if (!isAppQuitting && tray) {
+      // If it's the main window, just hide it
+      if (!isAppQuitting && tray && (win === mainWindow || win.getTitle().includes('Zalo'))) {
         event.preventDefault();
-        win.hide();
+        // Delay hide slightly to allow other listeners to finish
+        setTimeout(() => {
+          if (!isAppQuitting && !win.isDestroyed()) {
+            win.hide();
+          }
+        }, 50);
+      }
+    });
+
+    // Clean up mainWindow reference if destroyed
+    win.on('closed', () => {
+      if (win === mainWindow) {
+        mainWindow = null;
+        updateTrayMenu();
       }
     });
   } catch (e) {
@@ -130,24 +160,20 @@ app.on('browser-window-created', (_evt, win) => {
 app.once('ready', () => {
   try { Menu.setApplicationMenu(null); } catch (_) { }
 
-  if (fs.existsSync(iconPath)) {
+  const effectiveTrayIconPath = fs.existsSync(trayIconPath) ? trayIconPath : iconPath;
+
+  if (fs.existsSync(effectiveTrayIconPath)) {
     try {
-      tray = new Tray(iconPath);
+      tray = new Tray(effectiveTrayIconPath);
       tray.setToolTip('Zalo');
-      tray.on('click', () => {
-        if (mainWindow && !mainWindow.isDestroyed()) {
-          mainWindow.show();
-          mainWindow.focus();
-        }
-      });
+      tray.on('click', showMainWindow);
+      tray.on('double-click', showMainWindow); // Some environments prefer double click
+      updateTrayMenu();
       globalShortcut.register('CommandOrControl+Shift+I', toggleDevTools);
     } catch (e) {
       console.error('Tray init failed:', e);
     }
   }
-
-  // Register Zalux Updater plugin
-  zalux.register({ app, ipcMain, BrowserWindow, appDir });
 });
 
 // ---------------------------------------------------------------------------
