@@ -1,10 +1,53 @@
-const { app, BrowserWindow, Menu, Tray, globalShortcut } = require('electron');
+const { app, BrowserWindow, Menu, Tray, globalShortcut, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+
+// ---------------------------------------------------------------------------
+// Paths
+// ---------------------------------------------------------------------------
+
+const appDir = fs.existsSync(path.join(__dirname, 'app'))
+  ? path.join(__dirname, 'app')
+  : path.join(path.dirname(process.execPath), 'app');
+
+const iconPath = path.join(appDir, 'pc-dist', 'favicon-512x512.png');
+
+// ---------------------------------------------------------------------------
+// State
+// ---------------------------------------------------------------------------
 
 let tray = null;
 let mainWindow = null;
 let isAppQuitting = false;
+
+// ---------------------------------------------------------------------------
+// Plugins
+// ---------------------------------------------------------------------------
+
+const zalux = require('./plugins/zalux');
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function toggleDevTools() {
+  try {
+    const win = BrowserWindow.getFocusedWindow() || mainWindow;
+    if (win && win.webContents) {
+      if (win.webContents.isDevToolsOpened()) {
+        win.webContents.closeDevTools();
+      } else {
+        win.webContents.openDevTools({ mode: 'detach' });
+      }
+    }
+  } catch (e) {
+    console.error('Toggle DevTools failed', e);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// App lifecycle
+// ---------------------------------------------------------------------------
 
 app.on('before-quit', () => {
   isAppQuitting = true;
@@ -12,17 +55,23 @@ app.on('before-quit', () => {
     tray.destroy();
     tray = null;
   }
-  try { globalShortcut.unregisterAll(); } catch (_) {}
+  try { globalShortcut.unregisterAll(); } catch (_) { }
 });
 
-// Hide native menu bar but keep title bar
 app.on('browser-window-created', (_evt, win) => {
   try {
-    // Set mainWindow only once (first window created)
-    if (!mainWindow) {
+    if (fs.existsSync(iconPath)) {
+      win.setIcon(iconPath);
+    }
+
+    win.setMenuBarVisibility(false);
+    if (win.removeMenu) win.removeMenu();
+    win.autoHideMenuBar = true;
+
+    // Track the main Zalo window for tray menu
+    if (!mainWindow && win.getTitle() !== 'Shared Worker') {
       mainWindow = win;
 
-      // Set up tray context menu
       if (tray) {
         const contextMenu = Menu.buildFromTemplate([
           {
@@ -44,15 +93,7 @@ app.on('browser-window-created', (_evt, win) => {
           },
           {
             label: 'Toggle DevTools',
-            click: () => {
-              try {
-                const focused = BrowserWindow.getFocusedWindow() || mainWindow;
-                if (focused && focused.webContents) {
-                  if (focused.webContents.isDevToolsOpened()) focused.webContents.closeDevTools();
-                  else focused.webContents.openDevTools({ mode: 'detach' });
-                }
-              } catch (e) { console.error('Toggle DevTools failed', e); }
-            }
+            click: toggleDevTools
           },
           {
             label: 'Quit',
@@ -70,14 +111,7 @@ app.on('browser-window-created', (_evt, win) => {
       }
     }
 
-    // Hide menu bar (Edit/View/Window) but keep title bar with min/max/close buttons
-    win.setMenuBarVisibility(false);
-    if (win.removeMenu) win.removeMenu();
-    win.autoHideMenuBar = true;
-    
-    console.log('Window created - menu bar hidden, title bar should be visible');
-
-    // Handle close to tray for all windows
+    // Minimize to tray instead of closing
     win.on('close', (event) => {
       if (!isAppQuitting && tray) {
         event.preventDefault();
@@ -85,82 +119,52 @@ app.on('browser-window-created', (_evt, win) => {
       }
     });
   } catch (e) {
-    console.log('Error in browser-window-created:', e);
+    console.error('Error in browser-window-created:', e);
   }
 });
 
-app.once('ready', () => {
-  try { Menu.setApplicationMenu(null); } catch (_) {}
+// ---------------------------------------------------------------------------
+// Ready
+// ---------------------------------------------------------------------------
 
-  // Create tray icon - handle different environments
-  let iconPath = null;
-  
-  // Check if we're running in a packaged app (AppImage)
-  const isPackaged = app.isPackaged;
-  
-  if (isPackaged) {
-    // In packaged app, icon is relative to AppImage mount point (process.cwd() is already in app/)
-    iconPath = path.join(process.cwd(), 'pc-dist', 'favicon-512x512.png');
-  } else {
-    // In development, use the original path
-    iconPath = path.join(__dirname, 'app', 'pc-dist', 'favicon-512x512.png');
-  }
-  
-  if (iconPath && fs.existsSync(iconPath)) {
+app.once('ready', () => {
+  try { Menu.setApplicationMenu(null); } catch (_) { }
+
+  if (fs.existsSync(iconPath)) {
     try {
       tray = new Tray(iconPath);
       tray.setToolTip('Zalo');
-      
-      // Make tray icon clickable to show window
       tray.on('click', () => {
         if (mainWindow && !mainWindow.isDestroyed()) {
           mainWindow.show();
           mainWindow.focus();
         }
       });
-      // Register global shortcut for toggling DevTools
-      try {
-        globalShortcut.register('CommandOrControl+Shift+I', () => {
-          try {
-            const focused = BrowserWindow.getFocusedWindow() || mainWindow;
-            if (focused && focused.webContents) {
-              if (focused.webContents.isDevToolsOpened()) focused.webContents.closeDevTools();
-              else focused.webContents.openDevTools({ mode: 'detach' });
-            }
-          } catch (err) { console.error('globalShortcut toggle failed', err); }
-        });
-      } catch (e) { console.error('globalShortcut register failed', e); }
-    } catch (error) {
-      console.error('Failed to create tray icon:', error);
+      globalShortcut.register('CommandOrControl+Shift+I', toggleDevTools);
+    } catch (e) {
+      console.error('Tray init failed:', e);
     }
   }
+
+  // Register Zalux Updater plugin
+  zalux.register({ app, ipcMain, BrowserWindow, appDir });
 });
 
-// Skip normal Electron app setup and go straight to Zalo
-function bootstrap() {
-  // Check if extracted app exists
-  // Try development path first, then production path
-  const devPath = path.join(__dirname, 'app');
-  const prodPath = path.join(path.dirname(process.execPath), 'app');
-  
-  let appPath = fs.existsSync(devPath) ? devPath : prodPath;
-  const bootstrapPath = path.join(appPath, 'bootstrap.js');
+// ---------------------------------------------------------------------------
+// Bootstrap Zalo
+// ---------------------------------------------------------------------------
 
-  if (fs.existsSync(bootstrapPath)) {
-    console.log('Loading Zalo bootstrap from:', bootstrapPath);
-    
-    // Set the working directory to the app directory for Zalo
-    process.chdir(appPath);
-    
-    // Let Zalo take full control
-    try {
-      require(bootstrapPath);
-      console.log('Zalo bootstrap loaded - Zalo should handle everything from here');
-    } catch (error) {
-      console.error('Error loading Zalo:', error);
-    }
-  } else {
+function bootstrap() {
+  const bootstrapPath = path.join(appDir, 'bootstrap.js');
+  if (!fs.existsSync(bootstrapPath)) {
     console.error('Zalo bootstrap.js not found at:', bootstrapPath);
+    return;
+  }
+  process.chdir(appDir);
+  try {
+    require(bootstrapPath);
+  } catch (e) {
+    console.error('Error loading Zalo:', e);
   }
 }
 

@@ -40,6 +40,10 @@ This project includes integrated [ZaDark](https://github.com/quaric/zadark), ZaD
 
 ## ⚡ Quick Start (CLI)
 
+We strongly recommend using **Gear Lever** to integrate the AppImage perfectly into your system menu.
+
+**Note:** Zalo for Linux comes with a built-in updater. Whenever a new release is available, you will be prompted within the Zalo app to download and apply the update seamlessly without leaving the application.
+
 ### Option 1: ZaDark Variant (Dark Mode + Privacy)
 
 ```sh
