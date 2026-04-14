@@ -21,15 +21,15 @@
     "messaging",
     "linux"
   ],
-  "author": "doandat943",
+  "author": "hthienloc",
   "license": "MIT",
-  "homepage": "https://github.com/doandat943/zalo-for-linux",
+  "homepage": "https://github.com/hthienloc/zalo-for-linux",
   "repository": {
     "type": "git",
-    "url": "https://github.com/doandat943/zalo-for-linux.git"
+    "url": "https://github.com/hthienloc/zalo-for-linux.git"
   },
   "bugs": {
-    "url": "https://github.com/doandat943/zalo-for-linux/issues"
+    "url": "https://github.com/hthienloc/zalo-for-linux/issues"
   },
   "devDependencies": {
     "@electron/asar": "^4.0.1",

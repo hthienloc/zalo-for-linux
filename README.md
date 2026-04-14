@@ -1,6 +1,6 @@
 # Zalo for Linux 🐧
 
-[![Build Status](https://github.com/doandat943/zalo-for-linux/actions/workflows/build.yml/badge.svg)](https://github.com/doandat943/zalo-for-linux/actions/workflows/build.yml)
+[![Build Status](https://github.com/hthienloc/zalo-for-linux/actions/workflows/build.yml/badge.svg)](https://github.com/hthienloc/zalo-for-linux/actions/workflows/build.yml)
 
 An unofficial, community-driven port of the Zalo desktop application for **Linux only**, created by repackaging the official macOS client into a standard AppImage with integrated ZaDark.
 
@@ -42,8 +42,6 @@ This project includes integrated [ZaDark](https://github.com/quaric/zadark), ZaD
 
 We strongly recommend using **Gear Lever** to integrate the AppImage perfectly into your system menu.
 
-**Note:** Zalo for Linux comes with a built-in updater. Whenever a new release is available, you will be prompted within the Zalo app to download and apply the update seamlessly without leaving the application.
-
 ### Option 1: ZaDark Variant (Dark Mode + Privacy)
 
 ```sh
@@ -52,16 +50,16 @@ flatpak install flathub it.mijorus.gearlever -y
 
 # 2. Download AppImage
 # ZADARK_WGET
-wget https://github.com/doandat943/zalo-for-linux/releases/download/v1.0.0/Zalo-1.0.0+ZaDark-1.0.0-abcdef.AppImage
+wget https://github.com/hthienloc/zalo-for-linux/releases/download/v26.3.20/Zalo-26.3.20+ZaDark-26.1.1-bf5e683.AppImage
 
 # 3. Integrate with Gear Lever
 # ZADARK_INTEGRATE
-flatpak run it.mijorus.gearlever --integrate Zalo-1.0.0+ZaDark-1.0.0-abcdef.AppImage --yes
+flatpak run it.mijorus.gearlever --integrate Zalo-26.3.20+ZaDark-26.1.1-bf5e683.AppImage --yes
 
 # 4. Configure auto-updates
 flatpak run it.mijorus.gearlever --set-update-source ~/AppImages/zalo.appimage \
     --manager GithubUpdater \
-    repo_url=https://github.com/doandat943/zalo-for-linux \
+    repo_url=https://github.com/hthienloc/zalo-for-linux \
     repo_filename="Zalo-*+ZaDark-*-*.AppImage" \
     allow_prereleases=false
 ```
@@ -74,16 +72,16 @@ flatpak install flathub it.mijorus.gearlever -y
 
 # 2. Download AppImage
 # ORIGINAL_WGET
-wget https://github.com/doandat943/zalo-for-linux/releases/download/v1.0.0/Zalo-1.0.0-abcdef.AppImage
+wget https://github.com/hthienloc/zalo-for-linux/releases/download/v26.3.20/Zalo-26.3.20-bf5e683.AppImage
 
 # 3. Integrate with Gear Lever
 # ORIGINAL_INTEGRATE
-flatpak run it.mijorus.gearlever --integrate Zalo-1.0.0-abcdef.AppImage --yes
+flatpak run it.mijorus.gearlever --integrate Zalo-26.3.20-bf5e683.AppImage --yes
 
 # 4. Configure auto-updates
 flatpak run it.mijorus.gearlever --set-update-source ~/AppImages/zalo.appimage \
     --manager GithubUpdater \
-    repo_url=https://github.com/doandat943/zalo-for-linux \
+    repo_url=https://github.com/hthienloc/zalo-for-linux \
     repo_filename="Zalo-*-*.AppImage" \
     allow_prereleases=false
 ```
@@ -106,7 +104,7 @@ Steps:
 
 ```bash
 # Clone the repository
-git clone https://github.com/doandat943/zalo-for-linux.git
+git clone https://github.com/hthienloc/zalo-for-linux.git
 cd zalo-for-linux
 # Then initialize or update submodules
 git submodule update --init --recursive

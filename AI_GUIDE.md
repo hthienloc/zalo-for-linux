@@ -32,7 +32,8 @@ Zalo defaults to a frameless window on macOS.
 
 The project's `main.js` acts as a pre-loader.
 
-- It initializes the `Tray` icon and global shortcuts (e.g., `Ctrl+Shift+I` for DevTools).
+- It initializes the `Tray` icon using a custom B&W version (`assets/icons/zalo-tray-bw.png`) while keeping the main window icon colored.
+- It registers global shortcuts (e.g., `Ctrl+Shift+I` for DevTools).
 - It then calls `require(path.join(appPath, 'bootstrap.js'))` to hand over control to the actual Zalo application logic.
 
 ## Project Philosophies
@@ -45,10 +46,10 @@ The project's `main.js` acts as a pre-loader.
   - `build`: Packages the AppImage and deb/rpm files.
 - Recently added CLI automation allows for non-interactive builds via environment variables (e.g., `ZALO_VERSION`).
 
-### Installation Standardization
+### Installation & Update Standardization
 
 - The project explicitly recommends **Gear Lever** for handling AppImages on Linux.
-- Documentation should favor CLI-based or well-standardized GUI tools (like Gear Lever) over manual "chmod +x" instructions.
+- Internal auto-update mechanisms (in `plugins/zalux`) have been disabled to favor Gear Lever's more stable system-level management.
 
 ## Troubleshooting Guidance for AI
 
