@@ -122,6 +122,26 @@ app.on('browser-window-created', (_evt, win) => {
       }
     };
 
+    // Diagnostic listeners for screenshot investigation
+    const { dialog } = require('electron');
+    ipcMain.on('screen-capture', (event, ...args) => {
+      console.log('[DEBUG] screen-capture:', args);
+      dialog.showMessageBox({
+        title: 'Zalo Screenshot Debug',
+        message: 'Channel: screen-capture\nArgs: ' + JSON.stringify(args)
+      });
+    });
+    ipcMain.on('start-screen-capture', (event, ...args) => {
+      console.log('[DEBUG] start-screen-capture:', args);
+      dialog.showMessageBox({
+        title: 'Zalo Screenshot Debug',
+        message: 'Channel: start-screen-capture\nArgs: ' + JSON.stringify(args)
+      });
+    });
+    ipcMain.on('screen-capture-shortcut', (event, ...args) => {
+      console.log('[DEBUG] screen-capture-shortcut:', args);
+    });
+
     win.on('page-title-updated', (e, title) => checkTitle(title));
     
     // Initial check for already set title
