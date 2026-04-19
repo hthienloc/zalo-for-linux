@@ -29,15 +29,29 @@ async function main() {
       const existingCombo = await getExistingCombinations();
       console.log(`📦 Found ${existingCombo.length} existing combinations`);
 
-      // Check if combination already exists
-      const targetCombo = `${targetZaloVersion}+${targetZaDarkVersion}+${targetCommit}`;
-      const isExist = existingCombo.includes(targetCombo);
+      // Decide if we should skip based on trigger type
+      // For scheduled runs, we skip if the Zalo+ZaDark combo exists (ignoring commit)
+      // For push/dispatch, we skip only if the exact Zalo+ZaDark+Commit combo exists
+      const isScheduled = process.env.GITHUB_EVENT_NAME === 'schedule';
+      
+      let isExist = false;
+      if (isScheduled) {
+        const versionCombo = `${targetZaloVersion}+${targetZaDarkVersion}`;
+        isExist = existingCombo.some(combo => combo.startsWith(versionCombo));
+        console.log(`⏰ Scheduled run: checking for version combo ${versionCombo}`);
+      } else {
+        const fullCombo = `${targetZaloVersion}+${targetZaDarkVersion}+${targetCommit}`;
+        isExist = existingCombo.includes(fullCombo);
+        console.log(`⚡ Push/Manual run: checking for full combo ${fullCombo}`);
+      }
 
       if (isExist) {
-        console.log(`🎯 Workflow decision: skip (found ${targetCombo})`);
+        console.log('🎯 Workflow decision: skip (already exists)');
         process.env.BUILD = 'false';
+        fs.appendFileSync(process.env.GITHUB_OUTPUT, `build=false\n`);
       } else {
-        console.log(`🎯 Workflow decision: build (missing ${targetCombo})`);
+        const comboToBuild = `${targetZaloVersion}+${targetZaDarkVersion}+${targetCommit}`;
+        console.log(`🎯 Workflow decision: build (missing ${comboToBuild})`);
         process.env.BUILD = 'true';
         fs.appendFileSync(process.env.GITHUB_OUTPUT, `build=true\n`);
       }
