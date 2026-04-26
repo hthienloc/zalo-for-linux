@@ -46,6 +46,7 @@
     },
     "files": [
       "main.js",
+      "src/**/*",
       "package.json",
       "plugins/zalux/**/*",
       "assets/**/*"
