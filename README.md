@@ -51,11 +51,11 @@ flatpak install flathub it.mijorus.gearlever -y
 
 # 2. Download AppImage
 # ZADARK_WGET
-wget https://github.com/hthienloc/zalo-for-linux/releases/download/v26.4.10/Zalo-26.4.10+ZaDark-26.2-30b04c0.AppImage
+wget https://github.com/hthienloc/zalo-for-linux/releases/download/v26.4.10/Zalo-26.4.10+ZaDark-26.2-40711d8.AppImage
 
 # 3. Integrate with Gear Lever
 # ZADARK_INTEGRATE
-flatpak run it.mijorus.gearlever --integrate Zalo-26.4.10+ZaDark-26.2-30b04c0.AppImage --yes
+flatpak run it.mijorus.gearlever --integrate Zalo-26.4.10+ZaDark-26.2-40711d8.AppImage --yes
 
 # 4. Configure auto-updates
 flatpak run it.mijorus.gearlever --set-update-source ~/AppImages/zalo.appimage \
@@ -73,11 +73,11 @@ flatpak install flathub it.mijorus.gearlever -y
 
 # 2. Download AppImage
 # ORIGINAL_WGET
-wget https://github.com/hthienloc/zalo-for-linux/releases/download/v26.4.10/Zalo-26.4.10-30b04c0.AppImage
+wget https://github.com/hthienloc/zalo-for-linux/releases/download/v26.4.10/Zalo-26.4.10-40711d8.AppImage
 
 # 3. Integrate with Gear Lever
 # ORIGINAL_INTEGRATE
-flatpak run it.mijorus.gearlever --integrate Zalo-26.4.10-30b04c0.AppImage --yes
+flatpak run it.mijorus.gearlever --integrate Zalo-26.4.10-40711d8.AppImage --yes
 
 # 4. Configure auto-updates
 flatpak run it.mijorus.gearlever --set-update-source ~/AppImages/zalo.appimage \
