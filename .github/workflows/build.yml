@@ -122,7 +122,7 @@ jobs:
           # 4. Configure auto-updates
           flatpak run it.mijorus.gearlever --set-update-source ~/AppImages/zalo.appimage \
               --manager GithubUpdater \
-              repo_url=https://github.com/${{ github.repository }} \
+              repo=${{ github.repository }} \
               repo_filename="Zalo-*+ZaDark-*-*.AppImage" \
               allow_prereleases=false
           ```
@@ -141,7 +141,7 @@ jobs:
           # 4. Configure auto-updates
           flatpak run it.mijorus.gearlever --set-update-source ~/AppImages/zalo.appimage \
               --manager GithubUpdater \
-              repo_url=https://github.com/${{ github.repository }} \
+              repo=${{ github.repository }} \
               repo_filename="Zalo-*-*.AppImage" \
               allow_prereleases=false
           ```
